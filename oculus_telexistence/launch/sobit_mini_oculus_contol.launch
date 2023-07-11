@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="oculus_telexistence" type="sobit_mini_oculus_control.py" name="sobit_mini_oculus_control_node" output="screen"/>
+</launch>

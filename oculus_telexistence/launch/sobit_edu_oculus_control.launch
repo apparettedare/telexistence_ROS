@@ -1,0 +1,9 @@
+<launch>
+
+    <!--teleop-->
+    <node pkg="turtlebot_teleop" type="turtlebot_teleop_joy" name="turtlebot_teleop_joy" output="screen"/>
+
+    <!--joy_control-->
+    <node pkg="oculus_telexistence" type="sobit_edu_oculus_control.py" name="sobit_edu_oculus_control_node" output="screen"/>
+
+</launch>
