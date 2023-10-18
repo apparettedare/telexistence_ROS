@@ -142,6 +142,7 @@ add_executable(arm_message src/arm_message.cpp)
 add_executable(gripper_message src/gripper_message.cpp)
 add_executable(head_message src/head_message.cpp)
 add_executable(omni_message src/omni_message.cpp)
+add_executable(suction_controller src/suction_controller.cpp)
 add_executable(head_tracking src/head_tracking.cpp)
 add_executable(arm_controll src/arm_controll.cpp)
 add_executable(arm_controll_develop src/arm_controll_develop.cpp)
@@ -170,6 +171,9 @@ target_link_libraries(head_message
   ${catkin_LIBRARIES}
 )
 target_link_libraries(omni_message
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(suction_controller
   ${catkin_LIBRARIES}
 )
 target_link_libraries(head_tracking
