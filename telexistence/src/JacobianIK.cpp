@@ -36,24 +36,6 @@ void calculateJacobian_2d(double shoulder_roll, double elbow_tilt, double wrist_
     jacobian[1][2] = -arm_wrist * sin(shoulder_roll + elbow_tilt + wrist_tilt);
 }
 
-void calculateJacobian_3d(double arm_shoulder, double shoulder_roll, double elbow_tilt, double wrist_tilt, double jacobian3d[3][4]) {
-    // ヤコビ行列の要素を計算
-    jacobian3d[0][0] = -arm_shoulder * cos(-shoulder_pan) * sin(shoulder_roll) - arm_elbow * cos(elbow_tilt) * cos(-shoulder_pan) * sin(shoulder_roll) - arm_wrist * cos(-shoulder_pan) * cos(-elbow_tilt -wrist_tilt) * sin(shoulder_roll);
-    jacobian3d[0][1] = -arm_shoulder * cos(shoulder_roll) * sin(shoulder_pan) - arm_elbow * cos(shoulder_roll) * cos(elbow_tilt) * sin(shoulder_pan) - arm_wrist * cos(shoulder_roll) * cos(-elbow_tilt -wrist_tilt) * sin(shoulder_pan) + arm_elbow * sin(shoulder_roll) * sin(elbow_tilt) - arm_wrist * sin(shoulder_roll) * sin(-elbow_tilt -wrist_tilt);
-    jacobian3d[0][2] = -arm_elbow * sin(shoulder_pan) * sin(shoulder_roll) * sin(-elbow_tilt) - arm_wrist * sin(shoulder_pan) * sin(shoulder_roll) * sin(-elbow_tilt -wrist_tilt) - arm_elbow * cos(shoulder_roll) * cos(-elbow_tilt) - arm_wrist * cos(shoulder_roll) * cos(-elbow_tilt -wrist_tilt);
-    jacobian3d[0][3] = -arm_wrist * sin(shoulder_pan) * sin(shoulder_roll) + sin(-elbow_tilt -wrist_tilt) - arm_wrist * cos(shoulder_roll) * cos(-elbow_tilt -wrist_tilt);
-
-    jacobian3d[1][0] = -arm_shoulder * sin(shoulder_pan) - arm_elbow * cos(elbow_tilt) * sin(shoulder_pan) - arm_wrist * cos(-elbow_tilt -wrist_tilt) * sin(shoulder_pan);
-    jacobian3d[1][1] = 0;
-    jacobian3d[1][2] = -arm_elbow * cos(shoulder_pan) * sin(elbow_tilt) + arm_wrist * cos(shoulder_pan) * sin(-elbow_tilt -wrist_tilt);
-    jacobian3d[1][3] = arm_wrist * cos(shoulder_pan) * sin(-elbow_tilt -wrist_tilt);
-
-    jacobian3d[2][0] = arm_shoulder * cos(shoulder_pan) * cos(shoulder_roll) + arm_elbow * cos(shoulder_pan) * cos(shoulder_roll) * cos(elbow_tilt) + arm_wrist * cos(shoulder_pan) * cos(shoulder_roll) * cos(-elbow_tilt -wrist_tilt);
-    jacobian3d[2][1] = -arm_shoulder * sin(shoulder_pan) * sin(shoulder_roll) - arm_elbow * cos(elbow_tilt) * sin(shoulder_pan) * sin(shoulder_roll) - arm_wrist * cos(-elbow_tilt -wrist_tilt) * sin(shoulder_pan) * sin(shoulder_roll) - arm_elbow * cos(shoulder_roll) * sin(elbow_tilt) + arm_wrist * cos(shoulder_roll) * sin(-elbow_tilt -wrist_tilt);
-    jacobian3d[2][2] = arm_elbow * cos(shoulder_roll) * sin(shoulder_pan) * sin(-elbow_tilt) + arm_wrist * cos(shoulder_roll) * sin(shoulder_pan) * sin(-elbow_tilt -wrist_tilt) - arm_elbow * cos(-elbow_tilt) * sin(shoulder_roll) - arm_wrist * cos(-elbow_tilt -wrist_tilt) * sin(shoulder_roll);
-    jacobian3d[2][3] = arm_wrist * cos(shoulder_roll) * sin(shoulder_pan) * sin(-elbow_tilt -wrist_tilt) - arm_wrist * cos(-elbow_tilt -wrist_tilt) * sin(shoulder_roll);
-
-}
 void InverseKinematics_2d() {
     // 逆運動学の解を格納する変数
     double delta_shoulder_roll, delta_elbow_tilt, delta_wrist_tilt;
@@ -114,98 +96,20 @@ void InverseKinematics_2d() {
 
 }
 
-void InverseKinematics_3d() {
-    // 逆運動学の解を格納する変数
-    double delta_arm_shoulder, delta_shoulder_roll, delta_elbow_tilt, delta_wrist_tilt;
-    
-    // 収束条件
-    double epsilon = 0.1;
-    
-    // 最大反復回数
-    int maxIterations = 1000;
-    
-    // 反復回数
-    int iteration = 0;
-    
-    // ヤコビ行列
-    double jacobian[3][4];
-    
-    // 逆運動学の反復計算
-    do {
-        cout << "ヤコビってます" << endl;
-        // ヤコビ行列を計算
-        calculateJacobian_3d(arm_shoulder, shoulder_roll, elbow_tilt, wrist_tilt, jacobian);
-        
-        // ヤコビ行列の擬似逆行列を計算
-        double jacobianInverse[4][3];
-        double determinant = jacobian[0][0] * jacobian[1][1] * jacobian[2][2] +
-                             jacobian[0][1] * jacobian[1][2] * jacobian[2][0] +
-                             jacobian[0][2] * jacobian[1][0] * jacobian[2][1] -
-                             jacobian[0][2] * jacobian[1][1] * jacobian[2][0] -
-                             jacobian[0][1] * jacobian[1][0] * jacobian[2][2] -
-                             jacobian[0][0] * jacobian[1][2] * jacobian[2][1];
-        
-        jacobianInverse[0][0] = (jacobian[1][1] * jacobian[2][2] - jacobian[1][2] * jacobian[2][1]) / determinant;
-        jacobianInverse[0][1] = (jacobian[0][2] * jacobian[2][1] - jacobian[0][1] * jacobian[2][2]) / determinant;
-        jacobianInverse[0][2] = (jacobian[0][1] * jacobian[1][2] - jacobian[0][2] * jacobian[1][1]) / determinant;
-
-        jacobianInverse[1][0] = (jacobian[1][2] * jacobian[2][0] - jacobian[1][0] * jacobian[2][2]) / determinant;
-        jacobianInverse[1][1] = (jacobian[0][0] * jacobian[2][2] - jacobian[0][2] * jacobian[2][0]) / determinant;
-        jacobianInverse[1][2] = (jacobian[0][2] * jacobian[1][0] - jacobian[0][0] * jacobian[1][2]) / determinant;
-
-        jacobianInverse[2][0] = (jacobian[1][0] * jacobian[2][1] - jacobian[1][1] * jacobian[2][0]) / determinant;
-        jacobianInverse[2][1] = (jacobian[0][1] * jacobian[2][0] - jacobian[0][0] * jacobian[2][1]) / determinant;
-        jacobianInverse[2][2] = (jacobian[0][0] * jacobian[1][1] - jacobian[0][1] * jacobian[1][0]) / determinant;
-
-        jacobianInverse[3][0] = 0.0;
-        jacobianInverse[3][1] = 0.0;
-        jacobianInverse[3][2] = 0.0;
-
-        // 目標位置と現在の位置の差分を計算
-        double deltaX = targetX - (arm_shoulder * sin(shoulder_roll) + arm_elbow * sin(shoulder_roll + elbow_tilt) + arm_wrist * cos(shoulder_roll + elbow_tilt + wrist_tilt));
-        double deltaY = targetY - (arm_shoulder * sin(shoulder_roll) + arm_elbow * sin(shoulder_roll + elbow_tilt) + arm_wrist * cos(shoulder_roll + elbow_tilt + wrist_tilt));
-        double deltaZ = targetZ - (arm_shoulder * sin(shoulder_roll) + arm_elbow * sin(shoulder_roll + elbow_tilt) + arm_wrist * sin(shoulder_roll + elbow_tilt + wrist_tilt));
-        
-        // 角度の変化量を計算
-        delta_arm_shoulder = jacobianInverse[0][0] * deltaX + jacobianInverse[0][1] * deltaY + jacobianInverse[0][2] * deltaZ;
-        delta_shoulder_roll = jacobianInverse[1][0] * deltaX + jacobianInverse[1][1] * deltaY + jacobianInverse[1][2] * deltaZ;
-        delta_elbow_tilt = jacobianInverse[2][0] * deltaX + jacobianInverse[2][1] * deltaY + jacobianInverse[2][2] * deltaZ;
-        delta_wrist_tilt = jacobianInverse[3][0] * deltaX + jacobianInverse[3][1] * deltaY + jacobianInverse[3][2] * deltaZ;
-        
-        // 角度を更新
-        arm_shoulder += delta_arm_shoulder;
-        shoulder_roll += delta_shoulder_roll;
-        elbow_tilt += delta_elbow_tilt;
-        wrist_tilt += delta_wrist_tilt;
-        
-        // 反復回数をインクリメント
-        iteration++;
-    } while (fabs(delta_arm_shoulder) > epsilon || (fabs(delta_shoulder_roll) > epsilon || fabs(delta_elbow_tilt) > epsilon || fabs(delta_wrist_tilt) > epsilon) && iteration < maxIterations);
-    
-    // 結果を出力
-    cout << "arm_shoulder: " << arm_shoulder << endl;
-    cout << "shoulder_roll: " << shoulder_roll << endl;
-    cout << "elbow_tilt: " << elbow_tilt << endl;
-    cout << "wrist_tilt: " << wrist_tilt << endl;
-    
-    sobit_mini::SobitMiniController mini_arm_ctr;
-    // smini_arm_ctr.moveRightArm( shoulder_roll, -1.4, elbow_tilt, wrist_tilt, 0.0);
-
-}
 
 void Kinematics() {
-    // double trigonometric[3];
-    double trigonometric_3d[3];
-    // trigonometric[0] = arm_shoulder * sin(shoulder_roll) + arm_elbow * sin(shoulder_roll + elbow_tilt) + arm_wrist * sin(shoulder_roll + elbow_tilt + wrist_tilt);
-    // trigonometric[1] = 174;
-    // trigonometric[2] = 141.953 + arm_shoulder * cos(shoulder_roll) + arm_elbow * cos(shoulder_roll + elbow_tilt) + arm_wrist * cos(shoulder_roll + elbow_tilt + wrist_tilt);
-    double point0[3] = {0, 174, -141.953};
-    double point1[3] = {point0[0] + arm_shoulder * sin(-shoulder_pan) * sin(shoulder_roll), point0[1] + arm_shoulder * cos(shoulder_pan), point0[2] + arm_shoulder * sin(shoulder_pan) * cos(shoulder_roll)};
-    double t[2] = {arm_elbow * cos(-elbow_tilt) + arm_wrist * cos(-elbow_tilt - wrist_tilt), arm_elbow * sin(-elbow_tilt) + arm_wrist * sin(-elbow_tilt  - wrist_tilt)};
-    double point01_vec[3] = {(point1[0] - point0[0]) / arm_shoulder, (point1[1] - point0[1]) / arm_shoulder , (point1[2] - point0[2]) / arm_shoulder};
-    trigonometric_3d[0] = point1[0] + point01_vec[0] * t[0] + cos(shoulder_roll) * t[1];
-    trigonometric_3d[1] = point1[1] + point01_vec[1] * t[0];
-    trigonometric_3d[2] = point1[2] + point01_vec[2] * t[0] + sin(shoulder_roll) * t[1];
+    double trigonometric[3];
+    trigonometric[0] = arm_shoulder * sin(shoulder_roll) + arm_elbow * sin(shoulder_roll + elbow_tilt) + arm_wrist * sin(shoulder_roll + elbow_tilt + wrist_tilt);
+    trigonometric[1] = 174;
+    trigonometric[2] = 141.953 + arm_shoulder * cos(shoulder_roll) + arm_elbow * cos(shoulder_roll + elbow_tilt) + arm_wrist * cos(shoulder_roll + elbow_tilt + wrist_tilt);
+    // double trigonometric_3d[3];
+    // double point0[3] = {0, 174, -141.953};
+    // double point1[3] = {point0[0] + arm_shoulder * sin(-shoulder_pan) * sin(shoulder_roll), point0[1] + arm_shoulder * cos(shoulder_pan), point0[2] + arm_shoulder * sin(shoulder_pan) * cos(shoulder_roll)};
+    // double t[2] = {arm_elbow * cos(-elbow_tilt) + arm_wrist * cos(-elbow_tilt - wrist_tilt), arm_elbow * sin(-elbow_tilt) + arm_wrist * sin(-elbow_tilt  - wrist_tilt)};
+    // double point01_vec[3] = {(point1[0] - point0[0]) / arm_shoulder, (point1[1] - point0[1]) / arm_shoulder , (point1[2] - point0[2]) / arm_shoulder};
+    // trigonometric_3d[0] = point1[0] + point01_vec[0] * t[0] + cos(shoulder_roll) * t[1];
+    // trigonometric_3d[1] = point1[1] + point01_vec[1] * t[0];
+    // trigonometric_3d[2] = point1[2] + point01_vec[2] * t[0] + sin(shoulder_roll) * t[1];
 
     cout << "x座標: " << trigonometric_3d[0] << endl;
     cout << "y座標: " << trigonometric_3d[1] << endl;
@@ -242,7 +146,7 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "jacobian_inverse_kinematics_node");
   ros::NodeHandle nh;
   ros::Subscriber sub = nh.subscribe("/joint_states", 10, position_cb);
-  // ros::Subscriber sub = nh.subscribe("/oculus/3d", 10, position_sub);
+  ros::Subscriber sub = nh.subscribe("/oculus/3d", 10, position_sub);
   ros::Rate loop_rate(1);  // 10Hzのループレート
   while (ros::ok()){
     Kinematics();
@@ -254,8 +158,3 @@ int main(int argc, char **argv) {
   ros::spin();
   return 0;
 }
-
-//367.887
-//-509.84
-
-//-141.953
