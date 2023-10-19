@@ -6,6 +6,7 @@
 #include <cmath>
 #include <iostream>
 #include <eigen3/Eigen/Dense>
+#include <ctime>
 
 using namespace std;
 class Arm_controll {
@@ -30,11 +31,9 @@ public:
     rotationX = 0.0;
     rotationY = 0.0;
     rotationZ = 0.0;
-    first_position_x = 0.0;
-    first_position_z = 0.0;
     head_position_z = 0.0;
-    first_position_x = 0.0;
-    first_position_z = 0.0;
+    max_position_x = 0.0;
+    max_position_z = 0.0;
 
     // リンクの長さ
     head_to_arm_lift = 0.412;   
@@ -56,6 +55,7 @@ public:
     // HSRの頭の初期値:0.89
     // HSRのliftの初期値:0.3
     // HSRの手の初期値:0.34 0.07 0.65
+    // HSRの手を前に伸ばしたときの初期値:0.67 0.10 0.60
     first_head_position = 0.0;
 
     // 逆運動学の解を格納する変数
@@ -80,8 +80,7 @@ public:
         ros::NodeHandle nh;
         ros::Subscriber oculus_sub = nh.subscribe("/oculus/3d", 10, &Arm_controll::oculusCallback, this);
         ros::Publisher pub = nh.advertise<trajectory_msgs::JointTrajectory>("/hsrb/arm_trajectory_controller/command", 10);
-        ros::Time start_time = ros::Time::now();
-        
+        time_t start_time = time(NULL);        
         // wait to establish connection between the controller
         while (pub.getNumSubscribers() == 0) {
             ros::Duration(0.1).sleep();
@@ -102,10 +101,8 @@ public:
             }
             }
         }
-        while (ros::ok()) { 
+        while (difftime(time(NULL), start_time) < 10) { 
             setting();
-            if(first_head_position != 0) break;
-            ros::spinOnce();
         }
 
 
@@ -137,9 +134,9 @@ private:
     double rotationX;
     double rotationY;
     double rotationZ;
-    double first_position_x;
-    double first_position_z;
     double head_position_z;
+    double max_position_x;
+    double max_position_z;
 
     // リンクの長さ
     double head_to_arm_lift;   
@@ -201,15 +198,15 @@ private:
             // ヤコビ行列の擬似逆行列を計算
             Eigen::MatrixXd jacobianInverse = jacobian2d.completeOrthogonalDecomposition().pseudoInverse();
             // 目標位置と現在の位置の差分を計算
-            deltaX = targetX * (arm_lift_to_arm_flex + wrist_to_hand) / first_position_x - (arm_lift_to_arm_flex + arm_flex_to_arm_roll * sin(arm_flex_joint) + wrist_to_hand * sin(arm_flex_joint + wrist_flex_joint) + wrist_to_hand_2 * sin(wrist_flex_joint));
-            deltaZ = targetZ * (0.339 + 0.3 + arm_flex_to_arm_roll - wrist_to_hand_2) / first_position_z - (0.339 + arm_lift_joint + arm_flex_to_arm_roll * cos(arm_flex_joint) + wrist_to_hand * cos(arm_flex_joint + wrist_flex_joint) - wrist_to_hand_2 * cos(wrist_flex_joint));
+            if (targetX >= max_position_x) targetX = max_position_x;
+            if (targetZ >= max_position_z) targetZ = max_position_z;
+            deltaX = targetX * 0.67 / max_position_x - (arm_flex_to_arm_roll * sin(arm_flex_joint) + wrist_to_hand * sin(arm_flex_joint + wrist_flex_joint) + wrist_to_hand_2 * sin(wrist_flex_joint));
+            deltaZ = targetZ * 0.6 / max_position_z - (0.339 + arm_lift_joint + arm_flex_to_arm_roll * cos(arm_flex_joint) + wrist_to_hand * cos(arm_flex_joint + wrist_flex_joint) - wrist_to_hand_2 * cos(wrist_flex_joint));
             // 角度の変化量を計算
             // delta_arm_lift = jacobianInverse(0,0) * deltaX + jacobianInverse(0,1) * deltaZ;
             delta_arm_flex = jacobianInverse(1,0) * deltaX + jacobianInverse(1,1) * deltaZ;
             delta_wrist_flex = jacobianInverse(2,0) * deltaX + jacobianInverse(2,1) * deltaZ;
-            cout << "first_head_position: " << first_head_position << endl;
-            cout << "head_position_z: " << head_position_z << endl;
-            cout << "round((head_position_z - first_head_position) * 100) / 100:" << round((head_position_z - first_head_position) * 100) / 100 << endl << endl;
+
             // 角度を更新
             arm_lift_joint = 0.3 + round((head_position_z - first_head_position) * 100) / 100;
             // arm_lift_joint += delta_arm_lift;
@@ -226,7 +223,7 @@ private:
         } while ((fabs(delta_arm_lift) > epsilon || fabs(delta_arm_flex) > epsilon || fabs(delta_wrist_flex) > epsilon) && iteration < maxIterations);
 
         // 結果を出力
-        cout << "arm_lift_joint: " << arm_lift_joint << endl;
+        cout << "arm_lift_joint: " << round(arm_lift_joint * 10)  / 10<< endl;
         cout << "arm_flex_joint: " << arm_flex_joint << endl;
         cout << "wrist_flex_joint: " << wrist_flex_joint << endl << endl;
 
@@ -241,10 +238,10 @@ private:
         traj.points.resize(1);
 
         traj.points[0].positions.resize(5);
-        traj.points[0].positions[0] = arm_lift_joint;
-        traj.points[0].positions[1] = -arm_flex_joint;
+        traj.points[0].positions[0] = round(arm_lift_joint * 10) / 10;
+        traj.points[0].positions[1] = -round(arm_flex_joint* 10) / 10;
         traj.points[0].positions[2] = 0.0;
-        traj.points[0].positions[3] = -wrist_flex_joint;
+        traj.points[0].positions[3] = -round(wrist_flex_joint * 10) / 10;
         traj.points[0].positions[4] = 0.0;
         traj.points[0].velocities.resize(5);
         for (size_t i = 0; i < 5; ++i) {
@@ -269,7 +266,7 @@ private:
     // 順運動学を計算する関数
     void Kinematics() {
         double trigonometric[2];
-        trigonometric[0] = arm_lift_to_arm_flex + arm_flex_to_arm_roll * sin(arm_flex_joint) + wrist_to_hand * sin(arm_flex_joint + wrist_flex_joint) + wrist_to_hand_2 * cos(wrist_flex_joint);
+        trigonometric[0] = arm_flex_to_arm_roll * sin(arm_flex_joint) + wrist_to_hand * sin(arm_flex_joint + wrist_flex_joint) + wrist_to_hand_2 * cos(wrist_flex_joint);
         trigonometric[1] = 0.339 + arm_lift_joint + arm_flex_to_arm_roll * cos(arm_flex_joint) + wrist_to_hand * cos(arm_flex_joint + wrist_flex_joint) - wrist_to_hand_2 * sin(wrist_flex_joint);
         cout << "trigonometricX: " << trigonometric[0] << endl;
         cout << "trigonometricZ: " << trigonometric[1]<< endl << endl;
@@ -290,12 +287,14 @@ private:
 
     void setting() {
         first_head_position = head_position_z;
-        
-        first_position_x = 0.3;
-        first_position_z = 0.9;
-        cout << "first_position_x: " << first_position_x  << endl;
-        cout << "first_position_z: " << first_position_z << endl << endl;
+        if (max_position_x < targetX){
+            max_position_x = targetX;
+            max_position_z = targetZ;
+        }
+        cout << "max_position_x: " << max_position_x  << endl;
+        cout << "max_position_z: " << max_position_z << endl << endl;
         cout << "first_head_position: " << first_head_position << endl << endl;
+        ros::spinOnce();
     }
 };
 

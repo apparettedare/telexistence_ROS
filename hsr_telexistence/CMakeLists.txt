@@ -13,6 +13,14 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   oculus_telexistence
   message_generation
+  actionlib 
+  actionlib_msgs
+  tmc_control_msgs
+  tmc_manipulation_msgs
+  tmc_msgs 
+  tmc_suction
+  geometry_msgs
+  sensor_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -107,7 +115,17 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES hsr_telexistence
- CATKIN_DEPENDS roscpp rospy std_msgs message_runtime
+ CATKIN_DEPENDS
+ roscpp 
+ rospy 
+ std_msgs 
+ message_runtime
+ actionlib
+ actionlib_msgs
+ tmc_control_msgs
+ tmc_manipulation_msgs
+ tmc_msgs
+ tmc_suction
 #  DEPENDS system_lib
 )
 
@@ -143,6 +161,7 @@ add_executable(gripper_message src/gripper_message.cpp)
 add_executable(head_message src/head_message.cpp)
 add_executable(omni_message src/omni_message.cpp)
 add_executable(suction_controller src/suction_controller.cpp)
+add_executable(speak_object_weight src/speak_object_weight.cpp)
 add_executable(head_tracking src/head_tracking.cpp)
 add_executable(arm_controll src/arm_controll.cpp)
 add_executable(arm_controll_develop src/arm_controll_develop.cpp)
@@ -174,6 +193,9 @@ target_link_libraries(omni_message
   ${catkin_LIBRARIES}
 )
 target_link_libraries(suction_controller
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(speak_object_weight
   ${catkin_LIBRARIES}
 )
 target_link_libraries(head_tracking
