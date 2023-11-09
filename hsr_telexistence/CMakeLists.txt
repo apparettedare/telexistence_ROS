@@ -142,9 +142,6 @@ include_directories(
 link_directories(/usr/local/lib)
 
 ## Declare a C++ library
-# add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/hsr_telexistence.cpp
-# )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -165,6 +162,7 @@ add_executable(speak_object_weight src/speak_object_weight.cpp)
 add_executable(head_tracking src/head_tracking.cpp)
 add_executable(arm_controll src/arm_controll.cpp)
 add_executable(arm_controll_develop src/arm_controll_develop.cpp)
+add_executable(arm_control_lmik src/arm_control_lmik.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -205,6 +203,9 @@ target_link_libraries(arm_controll
   ${catkin_LIBRARIES}
 )
 target_link_libraries(arm_controll_develop
+${catkin_LIBRARIES}
+)
+target_link_libraries(arm_control_lmik
 ${catkin_LIBRARIES}
 )
 #############
