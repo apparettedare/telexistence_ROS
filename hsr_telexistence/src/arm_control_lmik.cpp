@@ -59,7 +59,9 @@ public:
         W_E = Matrix2d::Identity(2, 2);              // weigth of error
         // 収束条件
         threshold = 0.000001; 
-        // threshold = 0.001;        
+        // threshold = 0.001;
+        epsilon = 1e-10;
+        
         }
 
         void run() {
@@ -143,6 +145,8 @@ private:
     Matrix2d W_E;
     // 収束条件
     double threshold; 
+    double epsilon;
+
 
     // 残差を計算する関数
     void cal_e(Vector2d& e, VectorXd& q, Vector2d& target_pos) {
@@ -216,7 +220,7 @@ private:
 
         ros::NodeHandle nh;
         ros::Publisher pub = nh.advertise<trajectory_msgs::JointTrajectory>("/hsrb/arm_trajectory_controller/command", 10);
-        // 逆運動学の反復計算
+        // 逆運動学の反復計算(位置)
         do {
             cal_e(e, q, target_pos);
             cal_J(J, q);
@@ -242,6 +246,56 @@ private:
             if (q(2) < -1.221) q(2)  = -1.221;
             else if (q(2) > 1.919) q(2) = 1.919;
         } while (abs(delta_q(0)) > threshold && abs(delta_q(1)) > threshold && abs(delta_q(2)) > threshold);
+
+        // 逆運動学の反復計算(向き)
+        do {
+            MatrixXd R(3, 3);
+            VectorXd l(3), m(3);
+
+            R(0,0) = cos(rotationY);
+            R(0,1) = 0;
+            R(0,2) = -sin(rotationY);
+            R(1,0) = 0;
+            R(1,1) = 1;
+            R(1,2) = 0;
+            R(2,0) = sin(rotationY);
+            R(2,1) = 0;
+            R(2,2) = cos(rotationY);
+
+            l(0) = R(2,1) - R(1,2);
+            l(1) = R(0,2) - R(2,0);
+            l(2) = R(1,0) - R(0,1);
+
+            m(0) = R(0,0) + 1;
+            m(1) = R(1,1) + 1;
+            m(2) = R(2,2) + 1;
+
+            // // Rが対角行列
+            // if(cos(rotationY) == 1) {
+            //     // a = 0
+            // }   
+            // // Rが対角行列でない
+            // if(sin(rotationY) != 0) {
+            //     // a = atan2(l.squaredNorm(), R(0,0) + R(1,1) + R(2,2) - 1) / l.squaredNorm() * l;
+            // }
+            // if(cos(rotationY) == -1) {
+            //     // a = M_PI / 2 * m;
+            // }
+
+            // Rが対角行列
+            if(abs(cos(rotationY) - 1) < epsilon) {
+                // a = 0
+            }   
+            // Rが対角行列でない
+            if(sin(rotationY) < epsilon) {
+                // a = atan2(l.squaredNorm(), R(0,0) + R(1,1) + R(2,2) - 1) / l.squaredNorm() * l;
+            }
+            if(abs(cos(rotationY) + 1) < epsilon) {
+                // a = M_PI / 2 * m;
+            }
+
+        } while (abs(delta_q(0)) > threshold && abs(delta_q(1)) > threshold && abs(delta_q(2)) > threshold);
+
         q_ref = q;
 
         cout << "delta_q(0): " << delta_q(0) << endl;
