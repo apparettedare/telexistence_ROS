@@ -73,7 +73,7 @@ public:
             }
             traj.points[0].time_from_start = ros::Duration(0.01);
             if (pan != next_pan || tilt != next_tilt) {
-                printf("moving\n");
+                printf("The head is moving\n");
                 pub.publish(traj);
                 ros::Duration(0.1).sleep();
             }

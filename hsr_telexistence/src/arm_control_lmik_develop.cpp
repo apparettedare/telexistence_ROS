@@ -191,7 +191,7 @@ private:
         return;
     }
 
-    void cal_J_rot(MatrixXd& J) {
+    void cal_J_rot(MatrixXd& J, VectorXd& q) {
         J << 0, 0,
              1, 1,
              0, 0;
@@ -232,7 +232,7 @@ private:
         // 逆運動学の反復計算
         do {
             cal_e_rot(e_r, q, target_rot);
-            cal_J_rot(J_r);
+            cal_J_rot(J_r, q);
             cal_g(g_r, J_r, e_r);
             cal_W_N_rot(W_N_r, e_r);
             cal_H(H_r, J_r, W_N_r);
@@ -267,6 +267,7 @@ private:
             iteration++;
         } while (abs(delta_q_p(0)) > threshold && abs(delta_q_p(1)) > threshold && abs(delta_q_p(2)) > threshold  && iteration < maxIterations);
 
+        q(0) = 0.15 + (head_position_z - first_head_position);
         q_ref = q;
 
         trajectory_msgs::JointTrajectory traj;
@@ -320,12 +321,14 @@ private:
             if(set) rotationY = -round(data -> Right.rotation.x * 100) / 100 * 2;
             else rotationY    = round(data -> Right.rotation.x * 100) / 100 * 2;
         }
+        head_position_z = data -> Head.position.y;
     }
 
     void setting() {
         if(rotationY > 0){
             set = true;
         }
+        first_head_position = head_position_z;
     }
 };
 

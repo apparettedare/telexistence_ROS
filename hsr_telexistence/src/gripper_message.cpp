@@ -33,7 +33,8 @@ int main(int argc, char **argv) {
       }
     }
   }
-
+  while(ros::ok)
+  {
   // fill ROS message
   trajectory_msgs::JointTrajectory traj;
 
@@ -46,13 +47,14 @@ int main(int argc, char **argv) {
   traj.points[0].velocities.resize(1);
   traj.points[0].velocities[0] = 0.0;
   traj.points[0].effort.resize(1);
-  traj.points[0].effort[0] = 0;
-  traj.points[0].time_from_start = ros::Duration(3.0);
+  traj.points[0].effort[0] = -1.0;
+  traj.points[0].time_from_start = ros::Duration(0.1);
 
   // publish ROS message
   pub.publish(traj);
-
+  }
   ros::spinOnce();
+
 
   return 0;
 }

@@ -163,6 +163,8 @@ add_executable(head_tracking src/head_tracking.cpp)
 add_executable(arm_controll src/arm_controll.cpp)
 add_executable(arm_controll_develop src/arm_controll_develop.cpp)
 add_executable(arm_control_lmik src/arm_control_lmik.cpp)
+add_executable(arm_control_lmik_develop src/arm_control_lmik_develop.cpp)
+add_executable(force_torque_sensor src/force_torque_sensor.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -206,6 +208,12 @@ target_link_libraries(arm_controll_develop
 ${catkin_LIBRARIES}
 )
 target_link_libraries(arm_control_lmik
+${catkin_LIBRARIES}
+)
+target_link_libraries(arm_control_lmik_develop
+${catkin_LIBRARIES}
+)
+target_link_libraries(force_torque_sensor
 ${catkin_LIBRARIES}
 )
 #############
