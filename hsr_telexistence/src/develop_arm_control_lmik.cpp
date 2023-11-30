@@ -16,6 +16,7 @@ public:
     Arm_controll() {
         dimension = 2;
         arm_DoF = 3;
+
         // ジョイントの角度
         arm_lift_joint = 0.1;
         arm_flex_joint = 0.1;
@@ -23,26 +24,27 @@ public:
 
         // 目標位置
         targetX = 0.0;
+        targetY = 0.0;
         targetZ = 0.0;
         rotationY = 0.0;
         head_position_z = 0.0;
         first_head_position = 0.0;
+        first_hand_position = 0.0;
 
         // リンクの長さ
-        head_to_arm_lift = 0.412;   
         arm_flex_to_arm_roll = 0.345;
         wrist_to_hand = 0.192;
 
         tracked = false;
         set = false;
-        is_left_hand = false;
+        hand_is_left = false;
         
         W_N_bar_p = MatrixXd::Identity(3, 3) * 0.01;  // bias of dumping factor 
         W_N_bar_r = MatrixXd::Identity(2, 2) * 0.01;  // bias of dumping factor 
         W_E = MatrixXd::Identity(3, 3);              // weigth of error
 
         // 収束条件
-        threshold = 0.01; 
+        threshold = 0.0001; 
         // 最大反復回数
         maxIterations = 1000;
         // 反復回数
@@ -53,7 +55,7 @@ public:
         ros::NodeHandle nh;
         ros::Subscriber oculus_sub = nh.subscribe("/oculus/3d", 10, &Arm_controll::oculusCallback, this);
         ros::Publisher pub = nh.advertise<trajectory_msgs::JointTrajectory>("/hsrb/arm_trajectory_controller/command", 10);
-        nh.getParam("hand", is_left_hand);
+        nh.getParam("hand", hand_is_left);
 
         // wait to establish connection between the controller
         while (pub.getNumSubscribers() == 0) {
@@ -91,7 +93,7 @@ public:
             Vector2d target_pos;
             float target_rot;
             q << arm_lift_joint, arm_flex_joint, wrist_flex_joint;
-            target_pos << targetX, targetZ;
+            target_pos << sqrt(pow(targetX, 2) + pow(targetY, 2)), targetZ;
             target_rot = rotationY;
             if(target_pos(0) > (arm_flex_to_arm_roll + wrist_to_hand)) target_pos(0) = arm_flex_to_arm_roll + wrist_to_hand;
             else if(target_pos(0) < 0) target_pos(0) = 0;
@@ -101,7 +103,6 @@ public:
             else if(rotationY > 1) rotationY = 1;
             if(tracked) solve(q, target_pos, target_rot);
             ros::spinOnce();
-            ros::Duration(0.1).sleep();
         }
 
         ros::spin();
@@ -109,25 +110,28 @@ public:
 private:
     int dimension;
     int arm_DoF;
+
     // ジョイントの角度
     float arm_lift_joint;
     float arm_flex_joint;
     float wrist_flex_joint;
+
     // 目標位置
     float targetX;
+    float targetY;
     float targetZ;
     float rotationY;
     float head_position_z;
     float first_head_position;
+    float first_hand_position;
 
     // リンクの長さ
-    float head_to_arm_lift;   
     float arm_flex_to_arm_roll;
     float wrist_to_hand;
 
     bool tracked;
     bool set;
-    bool is_left_hand;
+    bool hand_is_left;
     
     MatrixXd W_E;
     MatrixXd W_N_bar_p;
@@ -191,7 +195,7 @@ private:
         return;
     }
 
-    void cal_J_rot(MatrixXd& J) {
+    void cal_J_rot(MatrixXd& J, VectorXd& q) {
         J << 0, 0,
              1, 1,
              0, 0;
@@ -232,7 +236,7 @@ private:
         // 逆運動学の反復計算
         do {
             cal_e_rot(e_r, q, target_rot);
-            cal_J_rot(J_r);
+            cal_J_rot(J_r, q);
             cal_g(g_r, J_r, e_r);
             cal_W_N_rot(W_N_r, e_r);
             cal_H(H_r, J_r, W_N_r);
@@ -267,6 +271,8 @@ private:
             iteration++;
         } while (abs(delta_q_p(0)) > threshold && abs(delta_q_p(1)) > threshold && abs(delta_q_p(2)) > threshold  && iteration < maxIterations);
 
+        q(0) = (head_position_z - first_head_position);
+        if (q(0) < 0) q(0) = 0;
         q_ref = q;
 
         trajectory_msgs::JointTrajectory traj;
@@ -289,48 +295,52 @@ private:
             traj.points[0].velocities[i] = 0.0;
         }
         
-
-        traj.points[0].time_from_start = ros::Duration(0.5);
+        traj.points[0].time_from_start = ros::Duration(0.4);
 
         if(q(0) != q_new(0) || q(1) != q_new(1) || q(2) != q_new(2)){
             printf("The arm is moving\n");
             pub.publish(traj);
             ros::spinOnce();
             ros::Duration(0.01).sleep();
+            q_new  = q;
         }
 
         ros::spinOnce();
-        q_new  = q;
         iteration = 0;
         return;
     }
 
     void oculusCallback(const oculus_telexistence::Part::ConstPtr& data) {
-        if (is_left_hand) {
+        if (hand_is_left) {
             tracked           = data -> Left.tracked.data;
-            targetX           = round(data -> Left.position.z * 100) / 100;
+            targetX           = round((data -> Left.position.z - data -> Head.position.z) * 100) / 100;
+            targetY           = round((data -> Left.position.x - first_hand_position - data -> Head.position.x) * 100) / 100;
             targetZ           = round(data -> Left.position.y * 100) / 100;
             if(set) rotationY = -round(data -> Left.rotation.x * 100) / 100 * 2;
             else rotationY    = round(data -> Left.rotation.x * 100) / 100 * 2;
         }
         else {
             tracked           = data -> Right.tracked.data;
-            targetX           = round(data -> Right.position.z * 100) / 100;
+            targetX           = round((data -> Right.position.z - data -> Head.position.z) * 100) / 100;
+            targetY           = round((data -> Right.position.x + first_hand_position - data -> Head.position.x) * 100) / 100;
             targetZ           = round(data -> Right.position.y * 100) / 100;
             if(set) rotationY = -round(data -> Right.rotation.x * 100) / 100 * 2;
             else rotationY    = round(data -> Right.rotation.x * 100) / 100 * 2;
         }
+        head_position_z = data -> Head.position.y;
     }
 
     void setting() {
         if(rotationY > 0){
             set = true;
         }
+        first_head_position = head_position_z;
+        first_hand_position = targetY;
     }
 };
 
 int main(int argc, char **argv) {
-    ros::init(argc, argv, "hsr_arm_control_lmik_node");
+    ros::init(argc, argv, "develop_hsr_arm_control_lmik_node");
     Arm_controll ac;
     ac.run();
     return 0;

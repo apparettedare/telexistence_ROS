@@ -1,8 +1,8 @@
 <launch>
-    <arg name="hand_is_left" default="false" />
-    <param name="hand" value="$(arg hand_is_left)" />
-    <!-- <node pkg="hsr_telexistence" type="head_tracking" name="hsr_pantilt_tracking_node" output="screen"/> -->
-    <!-- <node pkg="hsr_telexistence" type="arm_control_lmik" name="hsr_arm_control_lmik_node" output="screen"/> -->
-    <node pkg="hsr_telexistence" type="hsr_oculus_controll.py" name="hsr_oculus_control_node" output="screen"/>
-    <!-- <node pkg="hsr_telexistence" type="previous_save_csv.py" name="listener" output="screen"/> -->
+    <arg name="hand_is_left" default="false"/>
+    <param name="hand" value="$(arg hand_is_left)"/>
+    <node pkg="hsr_telexistence" type="previous_head_tracking" name="previous_hsr_pantilt_tracking_node" output="screen"/>
+    <node pkg="hsr_telexistence" type="previous_arm_control_lmik" name="previous_hsr_arm_control_lmik_node" output="screen"/> 
+    <node pkg="hsr_telexistence" type="previous_hsr_oculus_controll.py" name="previous_hsr_oculus_control_node" output="screen"/>
+    <!-- <node pkg="hsr_telexistence" type="previous_save_csv.py" name="previous_listener" output="screen"/> -->
 </launch>

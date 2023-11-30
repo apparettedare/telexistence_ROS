@@ -153,18 +153,17 @@ link_directories(/usr/local/lib)
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/hsr_telexistence_node.cpp)
 
-add_executable(arm_message src/arm_message.cpp)
-add_executable(gripper_message src/gripper_message.cpp)
-add_executable(head_message src/head_message.cpp)
-add_executable(omni_message src/omni_message.cpp)
-add_executable(suction_controller src/suction_controller.cpp)
-add_executable(speak_object_weight src/speak_object_weight.cpp)
-add_executable(head_tracking src/head_tracking.cpp)
-add_executable(arm_controll src/arm_controll.cpp)
-add_executable(arm_controll_develop src/arm_controll_develop.cpp)
-add_executable(arm_control_lmik src/arm_control_lmik.cpp)
-add_executable(arm_control_lmik_develop src/arm_control_lmik_develop.cpp)
-add_executable(force_torque_sensor src/force_torque_sensor.cpp)
+add_executable(arm_message sample/arm_message.cpp)
+add_executable(gripper_message sample/gripper_message.cpp)
+add_executable(head_message sample/head_message.cpp)
+add_executable(omni_message sample/omni_message.cpp)
+add_executable(suction_controller sample/suction_controller.cpp)
+add_executable(force_torque_sensor sample/force_torque_sensor.cpp)
+add_executable(speak_object_weight sample/speak_object_weight.cpp)
+add_executable(previous_head_tracking src/previous_head_tracking.cpp)
+add_executable(develop_head_tracking src/develop_head_tracking.cpp)
+add_executable(previous_arm_control_lmik src/previous_arm_control_lmik.cpp)
+add_executable(develop_arm_control_lmik src/develop_arm_control_lmik.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -195,27 +194,25 @@ target_link_libraries(omni_message
 target_link_libraries(suction_controller
   ${catkin_LIBRARIES}
 )
-target_link_libraries(speak_object_weight
-  ${catkin_LIBRARIES}
-)
-target_link_libraries(head_tracking
-  ${catkin_LIBRARIES}
-)
-target_link_libraries(arm_controll
-  ${catkin_LIBRARIES}
-)
-target_link_libraries(arm_controll_develop
-${catkin_LIBRARIES}
-)
-target_link_libraries(arm_control_lmik
-${catkin_LIBRARIES}
-)
-target_link_libraries(arm_control_lmik_develop
-${catkin_LIBRARIES}
-)
 target_link_libraries(force_torque_sensor
 ${catkin_LIBRARIES}
 )
+target_link_libraries(speak_object_weight
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(previous_head_tracking
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(develop_head_tracking
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(previous_arm_control_lmik
+${catkin_LIBRARIES}
+)
+target_link_libraries(develop_arm_control_lmik
+${catkin_LIBRARIES}
+)
+
 #############
 ## Install ##
 #############
