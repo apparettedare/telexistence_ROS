@@ -1,3 +1,4 @@
+std_msgs/Bool tracked
 geometry_msgs/Vector3 position
 geometry_msgs/Quaternion rotation
 geometry_msgs/Vector3 velocity
